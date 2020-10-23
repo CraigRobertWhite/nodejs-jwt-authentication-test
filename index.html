@@ -29,9 +29,12 @@
                            required>
                 </div>
                 <button class="btn btn-sm btn-primary ml-auto" type="submit">Login</button>
-                <div class="mt-4 d-flex justify-content-center">
-                    <small onclick="getDashboard()" class="ali-button">
+                <div class="mt-4 d-flex flex-column align-items-center">
+                    <small onclick="getDashboard()" class="custom-button">
                         Already logged in?
+                    </small>
+                    <small onclick="getSettings()" class="custom-button text-muted mt-2">
+                        Settings
                     </small>
                 </div>
             </form>
@@ -39,7 +42,12 @@
     </section>
     <section id="content-page" class="container h-100 hidden">
         <div class="d-flex flex-column">
-            <span id="breadcrumbs" class="mt-3"></span>
+            <div class="d-flex flex-row align-items-center mt-3">
+                <span id="breadcrumbs"></span>
+                <div onclick="logout()" class="custom-button ml-auto">
+                    Logout
+                </div>
+            </div>
             <div id="content-area" class="mt-5"></div>
         </div>
     </section>
@@ -79,6 +87,11 @@
         }
     }
 
+    function logout() {
+        localStorage.removeItem('jwt');
+        switchPage('login-page', '/');
+    }
+
     async function getDashboard() {
         const token = localStorage.getItem('jwt');
         try {
@@ -89,16 +102,33 @@
             });
 
             if (data.success) {
-                switchPage('content-page');
+                switchPage('content-page', '/dashboard');
                 document.querySelector('#breadcrumbs').innerHTML = 'Craig\'s JWT Authentication System / Dashboard';
-                document.querySelector('#content-area').innerHTML = data.content || 'Hello';
+                document.querySelector('#content-area').innerHTML = data.content;
             }
         } catch {
             console.log('An error has occurred.');
         }
     }
 
-    function switchPage(page) {
+    async function getSettings() {
+        const token = localStorage.getItem('jwt');
+        try {
+            const {data} = await axios.get('api/settings', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (data.success) {
+                switchPage('content-page', '/settings');
+            }
+        } catch {
+            console.log('An error has occurred.');
+        }
+    }
+
+    function switchPage(page, route) {
         if (page === 'login-page') {
             document.getElementById('content-page').classList.add('hidden');
             document.getElementById('login-page').classList.remove('hidden');
@@ -106,6 +136,7 @@
             document.getElementById('login-page').classList.add('hidden');
             document.getElementById('content-page').classList.remove('hidden');
         }
+        history.pushState(null, null, route);
     }
 
     // Automatically send users to the dashboard if their localStorage has a JWT token
@@ -131,12 +162,12 @@
         box-shadow: 5px 5px 10px gray;
     }
 
-    .ali-button {
+    .custom-button {
         cursor: pointer;
         color: #007BFF;
     }
 
-    .ali-button:hover {
+    .custom-button:hover {
         text-decoration: underline;
     }
 

@@ -88,6 +88,14 @@ app.get('/api/prices', jwtMW, (request, response) => {
     });
 });
 
+app.get('/api/settings', jwtMW, (request, response) => {
+    response.status(200).json({
+        success: true,
+        error: null,
+        content: 'Here are the settings.'
+    });
+});
+
 app.use((error, request, response, next) => {
     if (error.name === 'UnauthorizedError') {
         response.status(401).json({
