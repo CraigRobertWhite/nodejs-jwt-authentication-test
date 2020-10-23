@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap/dist/css/bootstrap.min.css">
+</head>
+<body>
+<main class="h-100">
+    <section id="login-page" class="d-flex align-items-center justify-content-center h-100">
+        <div class="d-flex flex-column login-prompt-box">
+            <h4 class="mb-3">Login</h4>
+            <form onsubmit="return login(event)" class="d-flex flex-column">
+                <div class="form-group">
+                    <input class="form-control"
+                           type="text"
+                           id="username"
+                           placeholder="Username"
+                           required>
+                </div>
+                <div class="form-group">
+                    <input class="form-control"
+                           type="text"
+                           id="password"
+                           placeholder="Password"
+                           required>
+                </div>
+                <button class="btn btn-sm btn-primary ml-auto" type="submit">Login</button>
+                <div class="mt-4 d-flex justify-content-center">
+                    <small onclick="getDashboard()" class="ali-button">
+                        Already logged in?
+                    </small>
+                </div>
+            </form>
+        </div>
+    </section>
+    <section id="content-page" class="container h-100 hidden">
+        <div class="d-flex flex-column">
+            <span id="breadcrumbs" class="mt-3"></span>
+            <div id="content-area" class="mt-5"></div>
+        </div>
+    </section>
+</main>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://unpkg.com/jquery/dist/jquery.min.js"></script>
+<script src="https://unpkg.com/bootstrap/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
+
+<script>
+    async function login(event) {
+        // Prevent the default event of the form from reloading the page
+        event.preventDefault();
+
+        // Store DOM elements into variables for two less DOM queries
+        let usernameElement = document.getElementById('username');
+        let passwordElement = document.getElementById('password');
+
+        try {
+            const {data} = await axios.post('/api/login', {
+                username: usernameElement.value,
+                password: passwordElement.value
+            });
+
+            if (data.success && data.token) {
+                usernameElement.value = '';
+                passwordElement.value = '';
+
+                localStorage.setItem('jwt', data.token);
+                await getDashboard();
+            } else {
+                throw 'Login unsuccessful.'
+            }
+        } catch {
+            console.log('An error has occurred.');
+        }
+    }
+
+    async function getDashboard() {
+        const token = localStorage.getItem('jwt');
+        try {
+            const {data} = await axios.get('api/dashboard', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (data.success) {
+                switchPage('content-page');
+                document.querySelector('#breadcrumbs').innerHTML = 'Craig\'s JWT Authentication System / Dashboard';
+                document.querySelector('#content-area').innerHTML = data.content || 'Hello';
+            }
+        } catch {
+            console.log('An error has occurred.');
+        }
+    }
+
+    function switchPage(page) {
+        if (page === 'login-page') {
+            document.getElementById('content-page').classList.add('hidden');
+            document.getElementById('login-page').classList.remove('hidden');
+        } else {
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('content-page').classList.remove('hidden');
+        }
+    }
+
+    // Automatically send users to the dashboard if their localStorage has a JWT token
+    (onLoad = () => {
+        const token = localStorage.getItem('jwt');
+        if (token) {
+            getDashboard();
+        }
+    })();
+</script>
+
+<style>
+    body {
+        margin: 0;
+        height: 100vh;
+        background-color: aliceblue;
+    }
+
+    .login-prompt-box {
+        background-color: white;
+        padding: 3rem;
+        border-radius: 10px;
+        box-shadow: 5px 5px 10px gray;
+    }
+
+    .ali-button {
+        cursor: pointer;
+        color: #007BFF;
+    }
+
+    .ali-button:hover {
+        text-decoration: underline;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+</style>
